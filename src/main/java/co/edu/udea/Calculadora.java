@@ -1,7 +1,5 @@
 package co.edu.udea;
 
-import co.edu.udea.views.CalculadoraUi;
-
 import java.util.*;
 
 public class Calculadora {
@@ -28,28 +26,43 @@ public class Calculadora {
         Stack<Double> numeros = new Stack<>();
         Stack<Character> operadores = new Stack<>();
 
+        boolean ultimoEsOperador = false;
+
         for (String token : tokens) {
             if (token.equals(" "))
                 continue;
 
             if (Character.isDigit(token.charAt(0))) {
                 numeros.push(Double.parseDouble(token));
+                ultimoEsOperador = false;
             } else if (token.equals("(")) {
                 operadores.push('(');
+                ultimoEsOperador = false;
             } else if (token.equals(")")) {
                 while (!operadores.empty() && operadores.peek() != '(')
                     numeros.push(operar(operadores.pop(), numeros.pop(), numeros.pop()));
+                if(operadores.empty() || operadores.peek() != '(')
+                    throw new Exception("Falta paréntesis de apertura");
                 operadores.pop();
+                ultimoEsOperador = false;
             } else if (token.equals("+") || token.equals("-") ||
                     token.equals("*") || token.equals("/")) {
+                if(ultimoEsOperador)
+                    throw new Exception("No se pueden poner dos operadores seguidos");
                 while (!operadores.empty() && tienePrecedencia(token.charAt(0), operadores.peek()))
                     numeros.push(operar(operadores.pop(), numeros.pop(), numeros.pop()));
                 operadores.push(token.charAt(0));
+                ultimoEsOperador = true;
+            } else {
+                throw new Exception("Token desconocido: " + token);
             }
         }
 
         while (!operadores.empty())
-            numeros.push(operar(operadores.pop(), numeros.pop(), numeros.pop()));
+            if(operadores.peek() == '(')
+                throw new Exception("Falta paréntesis de cierre");
+            else
+                numeros.push(operar(operadores.pop(), numeros.pop(), numeros.pop()));
 
         return numeros.pop();
     }
